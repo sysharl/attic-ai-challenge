@@ -6,4 +6,5 @@ faiss-cpu
 openai
 altair
 pandas
-streamlit
+langchain-text-splitters
+openai
