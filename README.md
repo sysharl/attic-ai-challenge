@@ -68,9 +68,9 @@ BASE_MODEL=gpt-4o-mini
 
 # --- RAG Hyperparameters ---
 # Controls the size of each text segment
-CHUNK_SIZE=500 
+CHUNK_SIZE=500
 # Controls the 'bridge' context between segments
-CHUNK_OVERLAP=50 
+CHUNK_OVERLAP=50
 # Number of document chunks retrieved per query
 TOP_K=3
 

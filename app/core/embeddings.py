@@ -1,10 +1,13 @@
-from sentence_transformers import SentenceTransformer
-from app.config import TOP_K
-import numpy as np
-import faiss
 import logging
 
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+from app.config import TOP_K
+
 model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")  # safer for API
+
 
 # -----------------------
 # Encode Chunks
