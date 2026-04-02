@@ -1,7 +1,19 @@
-metrics = {"queries": 0, "total_latency": 0.0, "avg_latency": 0.0, "total_tokens": 0}
+import time
+from langchain_community.callbacks import get_openai_callback
 
-def record_query(latency: float, tokens: int = 0):
-    metrics["queries"] += 1
-    metrics["total_latency"] += latency
-    metrics["avg_latency"] = metrics["total_latency"] / metrics["queries"]
-    metrics["total_tokens"] += tokens
+def generate_answer_with_metrics(query, chunks):
+    start_time = time.time()
+    
+    with get_openai_callback() as cb:
+        # Call your existing function
+        result = generate_answer(query, chunks)
+        
+        latency = time.time() - start_time
+        
+        # Log to console or a CSV/Database
+        print(f"--- Session Metrics ---")
+        print(f"Latency: {latency:.2f}s")
+        print(f"Total Tokens: {cb.total_tokens}")
+        print(f"Cost (USD): ${cb.total_cost}")
+        
+    return result

@@ -1,24 +1,32 @@
-# -------------------- OpenAI --------------------
-from openai import OpenAI  # New 2026 syntax
+from openai import OpenAI 
 from app.config import OPENAI_API_KEY
+
+from huggingface_hub import InferenceClient
+from app.config import HUGGINGFACE_API_KEY, LLM_PROVIDER,BASE_MODEL
+
+from app.config import (
+    OPENAI_API_KEY, 
+    HUGGINGFACE_API_KEY, 
+    LLM_PROVIDER, 
+    BASE_MODEL,
+    TOP_K
+)
 
 # Initialize the OpenAI client once
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-# -------------------- Hugging Face --------------------
-from huggingface_hub import InferenceClient
-from app.config import HUGGINGFACE_API_KEY
-
 HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+OPENAI_MODEL = "gpt-4o-mini"
 
 client = InferenceClient(
     base_url="https://router.huggingface.co/v1",    
     api_key=HUGGINGFACE_API_KEY
 )
 
-OPENAI_MODEL = "gpt-3.5-turbo" # Note: In 2026, gpt-4o-mini is usually faster/cheaper!
-
-def generate_answer(query: str, chunks: list, use_openai=True) -> dict:
+def generate_answer(query: str, chunks: list) -> dict:
+    """
+    Generates an answer based on retrieved chunks and configured LLM provider.
+    """
     if not chunks:
         return {"answer": "No relevant content found.", "sources": []}
 
@@ -28,36 +36,36 @@ def generate_answer(query: str, chunks: list, use_openai=True) -> dict:
         for c in chunks
     ])
     
-    # Using a clean ChatML-style prompt structure
-    system_message = "You are a precise document assistant. Use ONLY the provided context."
+    system_message = (
+        "You are a precise document assistant. Use ONLY the provided context to answer. "
+        "If the answer isn't there, say 'I cannot find this in the document.'"
+    )
+    
     user_prompt = (
-        f"STRICT RULES:\n"
-        f"1. Use ONLY the provided Context.\n"
-        f"2. If the answer isn't there, say 'I cannot find this in the document.'\n"
-        f"CONTEXT:\n{context}\n\n"
-        f"QUESTION: {query}"
+        f"CONTEXT:\n{context_text}\n\n"
+        f"QUESTION: {query}\n\n"
+        f"INSTRUCTION: Answer the question using the context above. Citations are handled by the system, "
+        f"so focus on a concise, grounded summary."
     )
 
     messages = [
         {"role": "system", "content": system_message},
         {"role": "user", "content": user_prompt}
     ]
-
     sources = chunks
-
     try:
-        if use_openai:
-            # Updated OpenAI v1.0+ Syntax
+        # 2. Route to the configured Provider
+        if LLM_PROVIDER.lower() == "openai":
             response = openai_client.chat.completions.create(
-                model=OPENAI_MODEL,
+                model=BASE_MODEL or "gpt-4o-mini",
                 messages=messages,
-                temperature=0
+                temperature=0  # Deterministic for RAG
             )
             answer_text = response.choices[0].message.content
-        else:
-            # Hugging Face Chat Completion
-            response = client.chat.completions.create(
-                model=HF_MODEL,
+            
+        else:  # Default to Hugging Face
+            response = hf_client.chat.completions.create(
+                model=BASE_MODEL or "Qwen/Qwen2.5-7B-Instruct",
                 messages=messages,
                 max_tokens=512,
                 temperature=0.1
