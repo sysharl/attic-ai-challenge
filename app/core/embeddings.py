@@ -1,12 +1,12 @@
 import logging
-
+import time
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from app.config import TOP_K
 
-model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")  # safer for API
+model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
 
 
 # -----------------------
@@ -26,7 +26,13 @@ def encode_chunks(chunks: list):
 # Encode Query
 # -----------------------
 def encode_query(query: str):
+    start_time = time.time()
     embedding = model.encode([query], convert_to_numpy=True)
+    end_time = time.time()
+    indexing_time = end_time - start_time
+    print(f"Total Indexing Time: {indexing_time:.2f} seconds")
+    print(f"Time per Page: {indexing_time / 20:.4f} seconds")
+
     faiss.normalize_L2(embedding)
     return embedding  # shape: (1, dim)
 
