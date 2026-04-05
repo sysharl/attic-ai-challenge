@@ -102,38 +102,19 @@ def chunk_recursive(
         return []
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=overlap, separators=["\n\n", "\n", " ", ""]
+        chunk_size=chunk_size, 
+        chunk_overlap=overlap, 
+        separators=["\n\n", "\n", " ", ""]
     )
-
-    documents = []
-
-    for item in text_blocks:
-        if item is None or not isinstance(item, dict):
-            continue
-
-        page_num = item.get("page_number", 0)  # Use .get() to avoid KeyErrors
-        text = item.get("text", "")
-
-        if not text:  # Skip empty pages
-            continue
-
-        chunks = splitter.split_text(text)
-        char_start = 0
-
-        for i, chunk in enumerate(chunks):
-            char_end = char_start + len(chunk)
-
-            documents.append(
-                Document(
-                    page_content=chunk,
-                    metadata={
-                        "page": page_num,
-                        "source": filename,
-                        "chunk_index": i,  # chunk number on this page
-                        "char_start": char_start,
-                        "char_end": char_end,
-                    },
-                )
-            )
-            char_start = char_end
-    return documents
+    
+    # Wrap your text blocks into Document objects first
+    initial_docs = [
+        Document(
+            page_content=item.get("text", ""), 
+            metadata={"page": item.get("page_number"), "source": filename}
+        )
+        for item in text_blocks if item.get("text")
+    ]
+    
+    # split_documents handles the chunking and carries over the metadata automatically
+    return splitter.split_documents(initial_docs)
