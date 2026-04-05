@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 # Load variables from .env file
 load_dotenv()
 
+API_PREFIX = os.getenv("API_CONTEXT_PATH","")
 # --- RAG / Chunking Settings ---
 # Method: 'recursive' or 'fixed'
 CHUNK_STRATEGY = os.getenv("CHUNK_STRATEGY", "recursive").lower()

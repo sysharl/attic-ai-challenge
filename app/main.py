@@ -5,15 +5,18 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from fastapi import (FastAPI, File, Form, HTTPException, Request, UploadFile)
+from fastapi import (FastAPI, File, Form, HTTPException, Request, UploadFile, APIRouter)
 from pydantic import BaseModel
 from werkzeug.utils import secure_filename
+
+from app.config import API_PREFIX
 
 from app.core.answer_generation import generate_answer
 from app.core.embeddings import encode_query, retrieve_top_k
 from app.services.session_manager import create_session, get_session
 
 app = FastAPI(title="PDF Q&A API")
+router = APIRouter(prefix=API_PREFIX)
 # configure logging
 logging.basicConfig(level=logging.INFO)
 # -----------------------
@@ -27,7 +30,7 @@ class AskRequest(BaseModel):
 # -----------------------
 # Health Check
 # -----------------------
-@app.get("/health")
+@router.get("/health")
 async def health():
     return {"status": "ok"}
 
@@ -45,7 +48,7 @@ def allowed_file(filename):
 # -----------------------
 # Upload Endpoint
 # -----------------------
-@app.post("/upload")
+@router.post("/upload")
 async def upload_files(
     request: Request,
     files: List[UploadFile] = File(...),
@@ -97,7 +100,7 @@ async def upload_files(
 # -----------------------
 # Ask Endpoint
 # -----------------------
-@app.post("/ask")
+@router.post("/ask")
 async def ask(request: AskRequest):
     session = get_session(request.session_id)
 
@@ -160,3 +163,5 @@ async def ask(request: AskRequest):
     )
 
     return response
+
+app.include_router(router)
