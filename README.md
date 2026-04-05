@@ -135,3 +135,63 @@ pip install -r requirements.txt
 ```
 uvicorn app.main:app --reload --port 8000
 ```
+# ⚠️ Limitations & Future Roadmap
+
+While the Attic AI Challenge provides a high-performance baseline for RAG, the following limitations have been identified for future iteration:
+
+---
+
+## 1. Vision-Language Constraints (OCR)
+
+**Current State:**  
+The system utilizes `pdfplumber` for high-fidelity text and table extraction.
+
+**Limitation:**  
+It cannot currently "read" or interpret embedded images, diagrams, or scanned handwritten notes within PDFs.
+
+**Future Goal:**  
+Integrate Tesseract OCR or a Vision-Language Model (VLM) like GPT-4o to process image-based PDF content.
+
+---
+
+## 2. Embedding Model Modernization
+
+**Current State:**  
+Benchmarked using "Small" class open-source models (`e5-small-v2`, `bge-small`) to optimize for CPU-only environments.
+
+**Limitation:**  
+Modern high-context embeddings (e.g., `nomic-embed-text-v1.5` with 8k context or late interaction models like ColBERT) have not yet been integrated into the production pipeline.
+
+**Future Goal:**  
+Implement Matryoshka Embeddings and rerankers (cross-encoders) to further boost the 90% hit rate toward 100%.
+
+---
+
+## 3. LLM Strategy Exploration
+
+**Current State:**  
+Supports routing to established providers (OpenAI and Hugging Face).
+
+**Limitation:**  
+Due to time constraints, specialized research into Small Language Model (SLM) performance (e.g., tuning Llama-3.2-3B or Phi-3.5 for specific RAG reasoning tasks) is pending.
+
+**Future Goal:**  
+Benchmark local SLMs against GPT-4o-mini to determine the most cost-effective "reasoning-to-token" ratio for private deployments.
+
+---
+
+## 4. Logging & Monitoring
+
+**Current State:**  
+Basic logging is either minimal or not yet standardized across the pipeline.
+
+**Limitation:**  
+Lack of structured observability makes it difficult to trace errors, analyze retrieval quality, monitor latency, and understand user query behavior in production.
+
+**Future Goal:**  
+Implement end-to-end logging and monitoring, including:
+- Structured logs for ingestion, retrieval, and generation stages  
+- Metrics tracking (latency, hit rate, token usage, failure rates)  
+- Query and response tracing for debugging and evaluation  
+- Integration with observability tools (e.g., Prometheus, Grafana, or OpenTelemetry)  
+- Alerting and dashboards for real-time system health monitoring  
