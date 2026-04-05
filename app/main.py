@@ -16,7 +16,6 @@ from app.core.embeddings import encode_query, retrieve_top_k
 from app.services.session_manager import create_session, get_session
 
 app = FastAPI(title="PDF Q&A API")
-router = APIRouter(prefix=API_PREFIX)
 # configure logging
 logging.basicConfig(level=logging.INFO)
 # -----------------------
@@ -30,7 +29,7 @@ class AskRequest(BaseModel):
 # -----------------------
 # Health Check
 # -----------------------
-@router.get("/health")
+@app.get("/health")
 async def health():
     return {"status": "ok"}
 
@@ -48,7 +47,7 @@ def allowed_file(filename):
 # -----------------------
 # Upload Endpoint
 # -----------------------
-@router.post("/upload")
+@app.post("/upload")
 async def upload_files(
     request: Request,
     files: List[UploadFile] = File(...),
@@ -100,7 +99,7 @@ async def upload_files(
 # -----------------------
 # Ask Endpoint
 # -----------------------
-@router.post("/ask")
+@app.post("/ask")
 async def ask(request: AskRequest):
     session = get_session(request.session_id)
 
@@ -163,5 +162,3 @@ async def ask(request: AskRequest):
     )
 
     return response
-
-app.include_router(router)
