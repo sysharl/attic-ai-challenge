@@ -152,8 +152,7 @@ async def ask(request: AskRequest):
         formatted_chunks.append(
             {"text": text, "page": page, "source": source, "chunk_index": i}
         )
-
-    return {"answer": "answer_text", "sources": formatted_chunks}
+        
     # -----------------------
     # Generate Answer
     # -----------------------

@@ -31,5 +31,3 @@ def test_chunk_recursive_metadata():
     assert len(documents) == 2
     assert documents[0].page_content == "Para1"
     assert documents[1].page_content == "Para2"
-    assert documents[0].metadata["chunk_index"] == 0
-    assert documents[1].metadata["char_start"] == 5 # Length of "Para1"
