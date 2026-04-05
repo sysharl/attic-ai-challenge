@@ -83,7 +83,14 @@ def chunk_fixed(
                 )
             )
             local_chunk_count += 1
+            
+            if end == text_length:
+                break
+            
             start += chunk_size - overlap
+            
+            if start >= text_length:
+                break
     return documents
 
 
