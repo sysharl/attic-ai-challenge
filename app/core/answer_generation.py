@@ -2,18 +2,15 @@ from huggingface_hub import InferenceClient
 from openai import OpenAI
 
 from app.config import (BASE_MODEL, HUGGINGFACE_API_KEY, LLM_PROVIDER,
-                        OPENAI_API_KEY, TOP_K)
-
-# Initialize the OpenAI client once
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+                        OPENAI_API_KEY, )
 
 HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-OPENAI_MODEL = "gpt-4o-mini"
-
-client = InferenceClient(
+hf_client = InferenceClient(
     base_url="https://router.huggingface.co/v1", api_key=HUGGINGFACE_API_KEY
 )
 
+OPENAI_MODEL = "gpt-4o-mini"
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_answer(query: str, chunks: list) -> dict:
     """
@@ -31,15 +28,22 @@ def generate_answer(query: str, chunks: list) -> dict:
     )
 
     system_message = (
-        "You are a precise document assistant. Use ONLY the provided context to answer. "
-        "If the answer isn't there, say 'I cannot find this in the document.'"
+        "You are a strictly grounded Document Assistant. Your task is to provide answers "
+        "based ONLY on the provided context. \n\n"
+        "RULES:\n"
+        "1. Use ONLY the 'CONTEXT' provided below.\n"
+        "2. If the answer is not contained within the context, respond exactly with: "
+        "'I cannot find this in the document.'\n"
+        "3. Do not use outside knowledge or mention your own training data.\n"
+        "4. Keep the tone professional and the summary concise."
     )
 
     user_prompt = (
-        f"CONTEXT:\n{context_text}\n\n"
+        f"Below are several snippets retrieved from a 20-page document.\n\n"
+        f"<CONTEXT>\n{context}\n</CONTEXT>\n\n"
         f"QUESTION: {query}\n\n"
-        f"INSTRUCTION: Answer the question using the context above. Citations are handled by the system, "
-        f"so focus on a concise, grounded summary."
+        f"FINAL INSTRUCTION: Synthesize an answer based on the <CONTEXT> above. "
+        f"If the snippets are disconnected, try to find the most relevant one."
     )
 
     messages = [
@@ -47,19 +51,19 @@ def generate_answer(query: str, chunks: list) -> dict:
         {"role": "user", "content": user_prompt},
     ]
     sources = chunks
+    provider = LLM_PROVIDER.lower()
     try:
         # 2. Route to the configured Provider
-        if LLM_PROVIDER.lower() == "openai":
+        if provider == "openai":
             response = openai_client.chat.completions.create(
-                model=BASE_MODEL or "gpt-4o-mini",
+                model=BASE_MODEL or OPENAI_MODEL,
                 messages=messages,
                 temperature=0,  # Deterministic for RAG
             )
             answer_text = response.choices[0].message.content
-
         else:  # Default to Hugging Face
             response = hf_client.chat.completions.create(
-                model=BASE_MODEL or "Qwen/Qwen2.5-7B-Instruct",
+                model=BASE_MODEL or HF_MODEL,
                 messages=messages,
                 max_tokens=512,
                 temperature=0.1,

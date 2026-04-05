@@ -61,7 +61,7 @@ def test_upload_invalid_file():
 # 5. Edge Case: Empty Query
 def test_empty_query():
     payload = {"session_id": "test-session", "query": ""}
-    response = client.post("/query", json=payload)
+    response = client.post("/ask", json=payload)
 
     # Verify the API design catches empty inputs
     assert response.status_code == 422  # FastAPI's default for validation error

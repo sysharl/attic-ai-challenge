@@ -11,7 +11,6 @@ A robust Retrieval-Augmented Generation (RAG) backend API built with **FastAPI**
 * **Rationale:** Chosen for its superior handling of visual layouts, multi-column text, and table structures compared to stream-based parsers.
 * **Edge Case Handling:**
     * **Empty Pages:** Validation layer skips null-content pages to prevent "noise" in the vector store.
-    * **Scanned PDFs:** [INSERT: e.g., "Handled via Tesseract OCR integration" OR "System returns a 422 Unprocessable Entity for non-selectable text"].
     * **Tables:** Preserves spatial alignment to ensure tabular data remains coherent during the embedding process.
 
 ### 2. Chunking & Indexing Strategy
@@ -23,9 +22,10 @@ The system supports two distinct chunking strategies, configurable via environme
 - **Secondary Method:** Fixed-Size Chunking (character-based)
 
 ### Parameters
-- **Chunk Size:** 450 tokens  
-  - Optimized for the 512-token limit of the BGE model to ensure no text is lost to truncation.
+- **Chunk Size:** 500 units 
+  - Optimized for the 512-token limit of the selected embedding models.
 - **Overlap:** 50 tokens (10%)
+- **Top K:** 5 to give more context for modern llm models, still within the context window with enough for reasoning
 
 ### Justification
 - The **recursive approach** respects structural boundaries (paragraphs `\n\n` → sentences `\n` → spaces), ensuring semantic units remain intact.
@@ -42,23 +42,15 @@ The system supports two distinct chunking strategies, configurable via environme
 ### 3. Embedding & Model Selection
 
 ### Embeddings
-- **Model:** `BAAI/bge-small-en-v1.5`
+- **Model:** `intfloat/e5-small-v2`
 - Selected after evaluating small-class open-source models for the best balance between:
-  - Retrieval accuracy (**53.3 MTEB**)
-  - CPU-only latency (~14ms)
+  - Retrieval accuracy (**39.38 MTEB**)
+  - CPU-only latency ~35ms (CPU-only)
 
 ### Selection Rationale
-- While `all-MiniLM` is slightly faster, **BGE-Small** provides:
-  - ~27% higher retrieval performance
-  - A larger **512-token context window**, preventing truncation in dense PDFs
-
-### Ablation Result
-- **Hit Rate@3 improved from 70% → 90%**
-
-### LLM Integration
-- Supports dual routing:
-  - **OpenAI:** GPT-4o-mini  
-  - **Hugging Face:** Qwen-2.5 (via InferenceClient)
+- Based on our internal ablation study using a Fixed-Size Chunking baseline, e5-small-v2 was selected over BGE and GTE due to its superior processing speed:
+  - Query Efficiency: It demonstrated the lowest query latency (~0.035s), making it 7x faster than BGE-Small in our CPU environment.
+  - Consistency: Maintained a 90% Hit Rate@3, ensuring the LLM always receives relevant context from the 20-page document.
 
 ### Grounding
 - Each response includes metadata-derived citations:
@@ -68,14 +60,16 @@ The system supports two distinct chunking strategies, configurable via environme
 
 ---
 
-## Evaluation Benchmark Results
+## Internal Evaluation Results
+- The following tests were conducted on a 20-page technical PDF using Fixed-Size Chunking (Size=500, Overlap=50) to establish a performance baseline for the retrieval pipeline.
 
 | Model Name             | MTEB Retrieval| Context Window | Indexing (20pg) | Query Latency | Hit Rate@3 |
 |------------------------|---------------|----------------|-----------------|---------------|------------|
-| e5-small-v2            | 41.9          | 512 tokens     | ~0.8s           | ~8ms          | 70%        |
-| bge-small-en-v1.5      | 53.3          | 512 tokens     | ~1.1s           | ~14ms         | 90%        |
-| gte-small              | 52.8          | 512 tokens     | ~0.9s           | ~12ms         | -          |
+| e5-small-v2            | 39.38         | 512 tokens     | 10.28s          | ~0.035s       | 90%        |
+| bge-small-en-v1.5      | 36.26         | 512 tokens     | 11.24s          | ~0.256s       | 90%        |
+| gte-small              | 35.99         | 512 tokens     | 9.10s           | ~0.774s       | 90%        |
 
+*Note: Retrieval scores reflect local performance on specific document types during testing. Query latency includes embedding generation and FAISS similarity search.
 ---
 
 ## 🏗️ System Architecture
@@ -103,14 +97,14 @@ Create a `.env` file in the root directory:
 ```env
 # API Keys
 OPENAI_API_KEY=<your_openai_key_here>
-HF_TOKEN=<your_huggingface_token_here>
+HUGGINGFACE_API_KEY=<your_huggingface_token_here>
 
 # App Settings
 PORT=8000
 
 # Model Selection & Routing
-LLM_PROVIDER=openai # Options: 'openai', 'huggingface'
-BASE_MODEL=gpt-4o-mini
+LLM_PROVIDER=huggingface # Options: 'openai', 'huggingface'
+BASE_MODEL=<model> # optional
 
 # --- RAG Hyperparameters ---
 # Controls the size of each text segment
@@ -118,7 +112,7 @@ CHUNK_SIZE=500
 # Controls the 'bridge' context between segments
 CHUNK_OVERLAP=50
 # Number of document chunks retrieved per query
-TOP_K=3
+TOP_K=5
 
 ```
 
@@ -140,16 +134,4 @@ pip install -r requirements.txt
 #### Start FastAPI server
 ```
 uvicorn app.main:app --reload --port 8000
-```
-
-### 3. Test Endpoint
-
-#### Build
-```
-docker build -t attic-backend .
-```
-#### Run (Automatically loads .env)
-```
-docker run -p 8000:8000 --env-file .env attic-backend
-Test the API at http://localhost:8000/docs
 ```

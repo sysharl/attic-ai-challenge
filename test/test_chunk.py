@@ -1,3 +1,6 @@
+from app.core.embeddings import build_faiss_index, encode_chunks
+from app.core.pdf_processing import chunk_fixed, chunk_recursive, extract_text
+
 def test_chunk_fixed_overlap():
     text = "abcdefghij"
     chunks = chunk_fixed(text, chunk_size=4, overlap=1)

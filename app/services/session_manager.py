@@ -1,15 +1,15 @@
 import logging
 import os
 import uuid
-
+import time
 from app.core.embeddings import build_faiss_index, encode_chunks
 from app.core.pdf_processing import chunk_fixed, chunk_recursive, extract_text
 
 sessions = {}
 
-
 def create_session(uploaded_file, strategy="recursive"):
     session_id = str(uuid.uuid4())
+    start_time = time.time() 
     text_blocks = extract_text(uploaded_file)
 
     if not text_blocks:
@@ -33,6 +33,8 @@ def create_session(uploaded_file, strategy="recursive"):
         raise ValueError("Failed to generate embeddings")
 
     index = build_faiss_index(embeddings)
+    indexing_time = time.time() - start_time 
+    print(f"DEBUG: Indexing completed in {indexing_time:.2f}s")
     sessions[session_id] = {
         "file_name": uploaded_file,
         "chunks": chunks,

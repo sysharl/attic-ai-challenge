@@ -5,8 +5,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from fastapi import (BackgroundTasks, FastAPI, File, Form, HTTPException,
-                     Request, UploadFile)
+from fastapi import (FastAPI, File, Form, HTTPException, Request, UploadFile)
 from pydantic import BaseModel
 from werkzeug.utils import secure_filename
 
@@ -20,8 +19,6 @@ logging.basicConfig(level=logging.INFO)
 # -----------------------
 # Request / Response Models
 # -----------------------
-
-
 class AskRequest(BaseModel):
     session_id: str
     question: str
@@ -30,14 +27,12 @@ class AskRequest(BaseModel):
 # -----------------------
 # Health Check
 # -----------------------
-
-
 @app.get("/health")
 async def health():
     return {"status": "ok"}
 
 
-UPLOAD_FOLDER = "/data"
+UPLOAD_FOLDER = "./data"
 ALLOWED_EXTENSIONS = {"pdf"}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -50,8 +45,6 @@ def allowed_file(filename):
 # -----------------------
 # Upload Endpoint
 # -----------------------
-
-
 @app.post("/upload")
 async def upload_files(
     request: Request,
@@ -163,8 +156,7 @@ async def ask(request: AskRequest):
     # -----------------------
     response = generate_answer(
         query=request.question,
-        chunks=formatted_chunks,
-        use_openai=False,  # or True if using OpenAI
+        chunks=formatted_chunks
     )
 
     return response
