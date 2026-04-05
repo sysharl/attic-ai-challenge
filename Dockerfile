@@ -26,4 +26,4 @@ ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
 
 # Change this to whatever starts your API (e.g., uvicorn, flask, etc.)
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT --HUGGINGFACE_API_KEY $HUGGINGFACE_API_KEY --LLM_PROVIDER $LLM_PROVIDER --CHUNK_SIZE $CHUNK_SIZE --CHUNK_OVERLAP $CHUNK_OVERLAP --TOP_K $TOP_K"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
